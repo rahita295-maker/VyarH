@@ -1,5 +1,5 @@
 -- ============================================================
--- VYARH v17.0 (ULTIMATE EDITION: VISUALS, OPTIMIZATION, CONFIG)
+-- VYARH v1.0.0 (OFFICIAL RELEASE)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -8,7 +8,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Очистка старых версий
@@ -16,7 +15,7 @@ for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
 
--- Таблица цветов (Accent теперь меняется)
+-- Палитра цветов
 local Colors = {
     Bg = Color3.fromRGB(15, 15, 15),
     Panel = Color3.fromRGB(22, 22, 22),
@@ -38,6 +37,7 @@ local Blur = Instance.new("BlurEffect", Lighting)
 Blur.Size = 0
 Blur.Enabled = false
 
+-- Круг FOV для аимбота
 local FOVCircle = Instance.new("Frame", ScreenGui)
 FOVCircle.Size = UDim2.new(0, 300, 0, 300)
 FOVCircle.Position = UDim2.new(0.5, -150, 0.5, -150)
@@ -47,18 +47,20 @@ FOVCircle.BorderColor3 = Colors.Accent
 FOVCircle.Visible = false
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 
+-- Главное окно
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 680, 0, 520)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Colors.Bg
-MainFrame.BackgroundTransparency = 0.1 -- Прозрачность для Glassmorphism
+MainFrame.BackgroundTransparency = 0.1
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = Colors.Accent; UIStroke.Thickness = 1.5; UIStroke.Transparency = 0.3
 
+-- Верхняя панель
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 55)
 TopBar.BackgroundColor3 = Colors.Panel
@@ -73,7 +75,7 @@ Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.Text = "VyarH v17.0"
+Title.Text = "VyarH v1.0.0"
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local DescLabel = Instance.new("TextLabel", TopBar)
@@ -98,6 +100,7 @@ CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy(); Blur:Destroy() end)
 
+-- Левая панель (Вкладки)
 local LeftPanel = Instance.new("Frame", MainFrame)
 LeftPanel.Size = UDim2.new(0, 120, 1, -65)
 LeftPanel.Position = UDim2.new(0, 10, 0, 60)
@@ -110,6 +113,7 @@ local TabList = Instance.new("UIListLayout", LeftPanel)
 TabList.Padding = UDim.new(0, 5)
 TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+-- Центральная панель (Функции)
 local CenterPanel = Instance.new("Frame", MainFrame)
 CenterPanel.Size = UDim2.new(0, 280, 1, -65)
 CenterPanel.Position = UDim2.new(0, 140, 0, 60)
@@ -130,6 +134,7 @@ local FuncLayout = Instance.new("UIListLayout", FuncScroll)
 FuncLayout.Padding = UDim.new(0, 6)
 FuncLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+-- Правая панель (Настройки)
 local RightPanel = Instance.new("Frame", MainFrame)
 RightPanel.Size = UDim2.new(0, 220, 1, -65)
 RightPanel.Position = UDim2.new(1, -230, 0, 60)
@@ -159,7 +164,7 @@ local RightLayout = Instance.new("UIListLayout", RightScroll)
 RightLayout.Padding = UDim.new(0, 8)
 RightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- ПЕРЕМЕННЫЕ
+-- ПЕРЕМЕННЫЕ СОСТОЯНИЙ
 local Pages = {Main = {}, Combat = {}, Visuals = {}, Optimize = {}, Settings = {}}
 local IsBinding = false
 local CurrentBindConfig = nil
@@ -167,7 +172,7 @@ local CurrentBindConfig = nil
 local speedEnabled, flyEnabled, noclipEnabled, infJumpEnabled, clickTpEnabled = false, false, false, false, false
 local aimbotEnabled, godEnabled, espEnabled, esp3DEnabled = false, false, false, false
 local spiderEnabled, spinbotEnabled, hitboxEnabled, tracersEnabled, fovEnabled = false, false, false, false, false
-local stealthEnabled, glassEnabled, trailEnabled, skyEnabled = false, false, false, false
+local stealthEnabled, glassEnabled, trailEnabled = false, false, false
 local currentCamFov = 70
 local baseSpeed, currentFlySpeed, aimbotSmoothness, aimbotFOV = 32, 50, 0.3, 300
 local flyBV, flyBG
@@ -219,7 +224,7 @@ local function CreateRightSlider(name, min, max, default, callback)
     UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update(i) end end)
 end
 
--- КОНФИГ
+-- КОНФИГУРАЦИЯ
 local FunctionConfig = {
     -- MAIN
     {Name="Stealth Bypass", Tab="Main", Desc="Маскировка от античитов", Type="Toggle", Callback=function(s) stealthEnabled=s end},
@@ -245,7 +250,6 @@ local FunctionConfig = {
     
     -- VISUALS
     {Name="Glassmorphism UI", Tab="Visuals", Desc="Размытие фона за меню", Type="Toggle", Callback=function(s) glassEnabled=s; Blur.Enabled=s; Blur.Size = s and 15 or 0 end},
-    {Name="Custom Skybox (Space)", Tab="Visuals", Desc="Ставит космическое небо", Type="Toggle", Callback=function(s) skyEnabled=s; if s then Lighting.Sky.SkyboxBk="rbxassetid://159454299"; Lighting.Sky.SkyboxDn="rbxassetid://159454296"; Lighting.Sky.SkyboxFt="rbxassetid://159454293"; Lighting.Sky.SkyboxLf="rbxassetid://159454286"; Lighting.Sky.SkyboxRt="rbxassetid://159454300"; Lighting.Sky.SkyboxUp="rbxassetid://159454288" else Lighting.Sky.SkyboxBk="rbxassetid://159454299"; Lighting.Sky.SkyboxDn="rbxassetid://159454296"; Lighting.Sky.SkyboxFt="rbxassetid://159454293"; Lighting.Sky.SkyboxLf="rbxassetid://159454286"; Lighting.Sky.SkyboxRt="rbxassetid://159454300"; Lighting.Sky.SkyboxUp="rbxassetid://159454288" end end}, -- Сброс не идеален, но работает
     {Name="Particle Trails", Tab="Visuals", Desc="Шлейф за спиной", Type="Toggle", 
      Callback=function(s) 
         trailEnabled=s 
@@ -287,15 +291,13 @@ local FunctionConfig = {
         end
     end},
     
-    -- SETTINGS
-    {Name="UI Color: Orange", Tab="Settings", Desc="Оранжевый", Type="Button", Callback=function() Colors.Accent = Color3.fromRGB(255,115,0); UIStroke.Color = Colors.Accent end},
-    {Name="UI Color: Blue", Tab="Settings", Desc="Синий", Type="Button", Callback=function() Colors.Accent = Color3.fromRGB(0,150,255); UIStroke.Color = Colors.Accent end},
-    {Name="UI Color: Green", Tab="Settings", Desc="Зеленый", Type="Button", Callback=function() Colors.Accent = Color3.fromRGB(0,255,100); UIStroke.Color = Colors.Accent end},
+    -- SETTINGS (Убрана смена цвета)
     {Name="Save Config", Tab="Settings", Desc="Сохраняет бинды в файл", Type="Button", Callback=function() SaveConfig() end},
-    {Name="Load Config", Tab="Settings", Desc="Загружает бинды", Type="Button", Callback=function() LoadConfig() end}
+    {Name="Load Config", Tab="Settings", Desc="Загружает бинды", Type="Button", Callback=function() LoadConfig() end},
+    {Name="Destroy GUI", Tab="Settings", Desc="Полностью закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy(); Blur:Destroy() end}
 }
 
--- СОЗДАНИЕ UI
+-- СОЗДАНИЕ ИНТЕРФЕЙСА
 local function CreateFunctionButton(cfg)
     local Btn = Instance.new("TextButton", FuncScroll)
     Btn.Size = UDim2.new(1, -10, 0, 40)
@@ -449,7 +451,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ФУНКЦИИ СОХРАНЕНИЯ
+-- ФУНКЦИИ КОНФИГА
 function SaveConfig()
     if writefile then
         local data = {}
@@ -483,7 +485,7 @@ function LoadConfig()
     end
 end
 
--- ЛОГИКА
+-- ГЛАВНАЯ ЛОГИКА
 RunService.Heartbeat:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = LocalPlayer.Character.HumanoidRootPart
@@ -528,6 +530,14 @@ RunService.Heartbeat:Connect(function()
 
     if godEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
         LocalPlayer.Character.Humanoid.Health = 100 
+    end
+
+    if hitboxEnabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
+                p.Character.HumanoidRootPart.Size = Vector3.new(10, 10, 10) 
+            end
+        end
     end
 
     -- 3D ESP
@@ -651,7 +661,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Переключатель меню (RightShift)
+-- Скрытие меню
 local isMenuOpen = true
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
@@ -675,4 +685,4 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; ToggleBtn.Visible = false; isMenuOpen = true end)
 
-print("VyarH v17.0 (Ultimate) успешно загружено!")
+print("VyarH v1.0.0 Release успешно загружено!")
