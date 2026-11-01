@@ -1,5 +1,5 @@
 -- ============================================================
--- VYARH v1.2.3 (ULTRA LIGHTWEIGHT)
+-- VYARH v1.3.0 (CLEAN EDITION - NO 3008, NO LAG)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Очистка старых версий
 for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
@@ -24,9 +25,11 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "VyarHMenu"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
+ScreenGui.IgnoreGuiInset = true
 
+-- Главное окно (без лишних обводок)
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 500, 0, 500)
+MainFrame.Size = UDim2.new(0, 450, 0, 500)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Colors.Bg
@@ -35,30 +38,37 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.BackgroundColor3 = Colors.Panel
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Colors.Panel
+TopBar.BorderSizePixel = 0
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel", TopBar)
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 20
-Title.Text = "VyarH v1.2.3"
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+Title.TextSize = 18
+Title.Text = "VyarH v1.3.0"
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local Close = Instance.new("TextButton", MainFrame)
-Close.Size = UDim2.new(0, 30, 0, 30)
-Close.Position = UDim2.new(1, -40, 0, 10)
-Close.BackgroundColor3 = Colors.Element
-Close.TextColor3 = Colors.Accent
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 18
-Close.Text = "X"
-Close.BorderSizePixel = 0
-Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 6)
-Close.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+local CloseBtn = Instance.new("TextButton", TopBar)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 10)
+CloseBtn.BackgroundColor3 = Colors.Element
+CloseBtn.TextColor3 = Colors.Accent
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.Text = "X"
+CloseBtn.BorderSizePixel = 0
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, -20, 1, -70)
-Scroll.Position = UDim2.new(0, 10, 0, 60)
+Scroll.Size = UDim2.new(1, -20, 1, -60)
+Scroll.Position = UDim2.new(0, 10, 0, 55)
 Scroll.BackgroundTransparency = 1
 Scroll.ScrollBarThickness = 6
 Scroll.ScrollBarImageColor3 = Colors.Accent
@@ -68,28 +78,24 @@ local Layout = Instance.new("UIListLayout", Scroll)
 Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- ПЕРЕМЕННЫЕ
+-- Переменные
 local speedOn, flyOn, noclipOn, infJumpOn, tpOn = false, false, false, false, false
-local aimbotOn, godOn, espOn, spinOn, hitboxOn = false, false, false, false, false
-local h3008, e3008, esp3008, loot3008 = false, false, false, false
-local fovOn, trailOn = false, false
-
+local aimbotOn, godOn, espOn, spinOn = false, false, false, false
 local spd, flySpd = 32, 50
 local flyV, flyG
 local HLs = {}
 
-local function CreateToggle(name, text, callback)
+-- Кнопки-переключатели
+local function CreateToggle(text, callback)
     local Btn = Instance.new("TextButton", Scroll)
     Btn.Size = UDim2.new(1, -10, 0, 40)
     Btn.BackgroundColor3 = Colors.Element
     Btn.TextColor3 = Colors.TextDim
     Btn.Font = Enum.Font.GothamMedium
-    Btn.TextSize = 13
-    Btn.Text = " " .. text
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.TextSize = 14
+    Btn.Text = text
     Btn.BorderSizePixel = 0
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    Instance.new("UIPadding", Btn).PaddingLeft = UDim.new(0, 10)
 
     local state = false
     Btn.MouseButton1Click:Connect(function()
@@ -101,7 +107,8 @@ local function CreateToggle(name, text, callback)
     end)
 end
 
-local function CreateSlider(name, min, max, def, callback)
+-- Ползунки
+local function CreateSlider(text, min, max, def, callback)
     local F = Instance.new("Frame", Scroll)
     F.Size = UDim2.new(1, -10, 0, 50)
     F.BackgroundColor3 = Colors.Element
@@ -112,7 +119,7 @@ local function CreateSlider(name, min, max, def, callback)
     L.Position = UDim2.new(0, 5, 0, 5)
     L.BackgroundTransparency = 1
     L.TextColor3 = Colors.Text
-    L.Text = name .. ": " .. def
+    L.Text = text .. ": " .. def
     L.TextXAlignment = Enum.TextXAlignment.Left
 
     local Bar = Instance.new("Frame", F)
@@ -134,20 +141,18 @@ local function CreateSlider(name, min, max, def, callback)
             local pos = math.clamp((i.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
             local val = math.floor(min + (max - min) * pos + 0.5)
             Fill.Size = UDim2.new(pos, 0, 1, 0)
-            L.Text = name .. ": " .. val
+            L.Text = text .. ": " .. val
             callback(val)
         end
     end)
 end
 
--- MAIN
-CreateToggle("", "Stealth Bypass", function(s) end)
-CreateToggle("", "Click TP", function(s) tpOn = s end)
-CreateToggle("", "Speed Hack", function(s) speedOn = s end)
+-- ==================== ФУНКЦИИ ====================
+CreateToggle("Speed Hack", function(s) speedOn = s end)
 CreateSlider("Speed Value", 16, 200, 32, function(v) spd = v end)
-CreateToggle("", "Fly (WASD)", function(s) 
+CreateToggle("Fly (WASD)", function(s) 
     flyOn = s 
-    if s then
+    if s and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         flyV = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart)
         flyV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
         flyG = Instance.new("BodyGyro", LocalPlayer.Character.HumanoidRootPart)
@@ -158,25 +163,29 @@ CreateToggle("", "Fly (WASD)", function(s)
     end
 end)
 CreateSlider("Fly Speed", 10, 200, 50, function(v) flySpd = v end)
-CreateToggle("", "Noclip", function(s) noclipOn = s end)
-CreateToggle("", "Infinite Jump", function(s) infJumpOn = s end)
+CreateToggle("Noclip", function(s) noclipOn = s end)
+CreateToggle("Infinite Jump", function(s) infJumpOn = s end)
+CreateToggle("Click TP", function(s) tpOn = s end)
+CreateToggle("Aimbot (RMB)", function(s) aimbotOn = s end)
+CreateToggle("Spinbot", function(s) spinOn = s end)
+CreateToggle("God Mode", function(s) godOn = s end)
+CreateToggle("Player ESP", function(s) 
+    espOn = s 
+    if s then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                local h = Instance.new("Highlight", p.Character)
+                h.FillColor = Colors.Accent
+                HLs[p] = h
+            end
+        end
+    else
+        for _, h in pairs(HLs) do h:Destroy() end
+        HLs = {}
+    end
+end)
 
--- COMBAT
-CreateToggle("", "Aimbot (RMB)", function(s) aimbotOn = s end)
-CreateToggle("", "Spinbot", function(s) spinOn = s end)
-CreateToggle("", "Hitbox Expander", function(s) hitboxOn = s end)
-CreateToggle("", "God Mode", function(s) godOn = s end)
-
--- VISUALS
-CreateToggle("", "Particle Trails", function(s) trailOn = s end)
-
--- 3008
-CreateToggle("", "3008: Infinite Hunger", function(s) h3008 = s end)
-CreateToggle("", "3008: Infinite Energy", function(s) e3008 = s end)
-CreateToggle("", "3008: Employee ESP", function(s) esp3008 = s end)
-CreateToggle("", "3008: Auto Loot", function(s) loot3008 = s end)
-
--- ЛОГИКА
+-- ==================== ЛОГИКА ====================
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if not char then return end
@@ -192,18 +201,12 @@ RunService.Heartbeat:Connect(function()
     end
 
     if noclipOn then
-        for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+        for _, v in pairs(char:GetDescendants()) do 
+            if v:IsA("BasePart") then v.CanCollide = false end 
+        end
     end
 
     if godOn then hum.Health = 100 end
-
-    if hitboxOn then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                p.Character.HumanoidRootPart.Size = Vector3.new(10,10,10)
-            end
-        end
-    end
 end)
 
 UserInputService.JumpRequest:Connect(function()
@@ -213,7 +216,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function()
-    if flyOn and flyV and flyG then
+    if flyOn and flyV and flyG and LocalPlayer.Character then
         local md = Vector3.zero
         local cam = workspace.CurrentCamera
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then md = md + cam.CFrame.LookVector end
@@ -221,6 +224,7 @@ RunService.RenderStepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then md = md - cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then md = md + cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then md = md + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then md = md - Vector3.new(0,1,0) end
         flyV.Velocity = md * flySpd
         flyG.CFrame = cam.CFrame
     end
@@ -256,36 +260,7 @@ UserInputService.InputBegan:Connect(function(i, gp)
     end
 end)
 
--- 3008 Logic
-task.spawn(function()
-    while task.wait(2) do
-        if h3008 or e3008 then
-            local char = LocalPlayer.Character
-            if char then
-                for _, obj in pairs(char:GetDescendants()) do
-                    if h3008 and (obj.Name:lower():find("hunger") or obj.Name:lower():find("food")) and obj:IsA("NumberValue") then obj.Value = 100 end
-                    if e3008 and (obj.Name:lower():find("energy") or obj.Name:lower():find("stamina")) and obj:IsA("NumberValue") then obj.Value = 100 end
-                end
-            end
-        end
-        if esp3008 then
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= LocalPlayer.Character then
-                    if not Players:GetPlayerFromCharacter(v) and not v:FindFirstChild("VyarHEmp") then
-                        local h = Instance.new("Highlight", v)
-                        h.Name = "VyarHEmp"
-                        h.FillColor = Color3.fromRGB(255, 0, 0)
-                    end
-                end
-            end
-        else
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") then local h = v:FindFirstChild("VyarHEmp"); if h then h:Destroy() end end
-            end
-        end
-    end
-end)
-
+-- Скрытие меню
 local toggleBtn = Instance.new("TextButton", ScreenGui)
 toggleBtn.Size = UDim2.new(0, 100, 0, 30)
 toggleBtn.Position = UDim2.new(0, 20, 1, -50)
@@ -303,4 +278,4 @@ UserInputService.InputBegan:Connect(function(i, gp)
     end
 end)
 
-print("VyarH v1.2.3 (Lightweight) Загружен!")
+print("VyarH v1.3.0 (Clean) загружено!")
