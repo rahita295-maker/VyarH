@@ -1,5 +1,5 @@
 -- ============================================================
--- VYARH v1.2.0 (3008 SURVIVAL EDITION)
+-- VYARH v1.2.1 (3008 OPTIMIZED - NO LAG)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -10,12 +10,10 @@ local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
--- Очистка старых версий
 for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
 
--- Палитра
 local Colors = {
     Bg = Color3.fromRGB(15, 15, 15),
     Panel = Color3.fromRGB(22, 22, 22),
@@ -71,7 +69,7 @@ Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.Text = "VyarH v1.2.0"
+Title.Text = "VyarH v1.2.1"
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local DescLabel = Instance.new("TextLabel", TopBar)
@@ -173,7 +171,6 @@ local esp3DGuis = {}
 local lastSafePosition = nil
 local myTrail = nil
 
--- 3008 Variables
 local infHunger, infEnergy, empEsp, autoLoot = false, false, false, false
 
 local function ClearRightPanel()
@@ -219,7 +216,6 @@ local function CreateRightSlider(name, min, max, default, callback)
 end
 
 local FunctionConfig = {
-    -- MAIN
     {Name="Stealth Bypass", Tab="Main", Desc="Маскировка от античитов", Type="Toggle", Callback=function(s) stealthEnabled=s end},
     {Name="Click TP", Tab="Main", Desc="Телепорт по клику мыши", Type="Toggle", Callback=function(s) clickTpEnabled=s end},
     {Name="Speed Hack", Tab="Main", Desc="Обход скорости", Type="Toggle", Callback=function(s) speedEnabled=s end, Settings={{"Speed", 16, 200, 32, function(v) baseSpeed=v end}}},
@@ -227,34 +223,24 @@ local FunctionConfig = {
     {Name="Fly (WASD)", Tab="Main", Desc="Полет", Type="Toggle", Callback=function(s) flyEnabled=s end, Settings={{"Speed", 10, 200, 50, function(v) currentFlySpeed=v end}}},
     {Name="Noclip", Tab="Main", Desc="Проход сквозь стены", Type="Toggle", Callback=function(s) noclipEnabled=s end},
     {Name="Infinite Jump", Tab="Main", Desc="Бесконечный прыжок", Type="Toggle", Callback=function(s) infJumpEnabled=s end},
-    
-    -- COMBAT
     {Name="Aimbot (RMB)", Tab="Combat", Desc="Наводка на цель", Type="Toggle", Callback=function(s) aimbotEnabled=s; FOVCircle.Visible=s end, Settings={{"Smoothness", 1, 100, 30, function(v) aimbotSmoothness=v/100 end}, {"FOV Radius", 50, 800, 300, function(v) aimbotFOV=v; FOVCircle.Size=UDim2.new(0,v,0,v); FOVCircle.Position=UDim2.new(0.5,-v/2,0.5,-v/2) end}}},
     {Name="Spinbot", Tab="Combat", Desc="Вращение тела", Type="Toggle", Callback=function(s) spinbotEnabled=s end},
     {Name="Hitbox Expander", Tab="Combat", Desc="Большой хитбокс", Type="Toggle", Callback=function(s) hitboxEnabled=s end},
     {Name="God Mode", Tab="Combat", Desc="Локальный бог", Type="Toggle", Callback=function(s) godEnabled=s end},
-    
-    -- VISUALS
     {Name="Glassmorphism UI", Tab="Visuals", Desc="Размытие фона за меню", Type="Toggle", Callback=function(s) glassEnabled=s; Blur.Enabled=s; Blur.Size = s and 15 or 0 end},
     {Name="Particle Trails", Tab="Visuals", Desc="Шлейф за спиной", Type="Toggle", Callback=function(s) trailEnabled=s end},
     {Name="3D ESP", Tab="Visuals", Desc="Коробки и HP над игроками", Type="Toggle", Callback=function(s) esp3DEnabled=s end},
-    {Name="Time Changer (Noon)", Tab="Visuals", Desc="Ставит день (14:00)", Type="Toggle", Callback=function(s) Lighting.ClockTime = s and 14 or 0 end},
-    
-    -- OPTIMIZE
     {Name="Aggressive FPS Boost", Tab="Optimize", Desc="Удаляет все частицы", Type="Button", Callback=function() 
         for _,v in pairs(workspace:GetDescendants()) do if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v:Destroy() end end 
     end},
-    {Name="Low Graphics", Tab="Optimize", Desc="Режим картошки", Type="Button", Callback=function() 
-        settings().Rendering.QualityLevel = 1 
-    end},
+    {Name="Low Graphics", Tab="Optimize", Desc="Режим картошки", Type="Button", Callback=function() settings().Rendering.QualityLevel = 1 end},
     
-    -- ===== 3008 TAB =====
+    -- 3008 (ОПТИМИЗИРОВАНО)
     {Name="Infinite Hunger", Tab="Game3008", Desc="Еда не убывает", Type="Toggle", Callback=function(s) infHunger=s end},
     {Name="Infinite Energy", Tab="Game3008", Desc="Выносливость не убывает", Type="Toggle", Callback=function(s) infEnergy=s end},
-    {Name="Employee ESP", Tab="Game3008", Desc="Подсветка сотрудников (NPC)", Type="Toggle", Callback=function(s) empEsp=s end},
-    {Name="Auto Loot (Клик)", Tab="Game3008", Desc="Кликни по предмету, чтобы телепортироваться к нему", Type="Toggle", Callback=function(s) autoLoot=s end},
+    {Name="Employee ESP", Tab="Game3008", Desc="Подсветка NPC (без лагов)", Type="Toggle", Callback=function(s) empEsp=s end},
+    {Name="Auto Loot (Click)", Tab="Game3008", Desc="Кликни по еде для ТП", Type="Toggle", Callback=function(s) autoLoot=s end},
     
-    -- SETTINGS
     {Name="Save Config", Tab="Settings", Desc="Сохраняет бинды", Type="Button", Callback=function() SaveConfig() end},
     {Name="Load Config", Tab="Settings", Desc="Загружает бинды", Type="Button", Callback=function() LoadConfig() end},
     {Name="Destroy GUI", Tab="Settings", Desc="Закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy(); Blur:Destroy() end}
@@ -274,14 +260,12 @@ local function CreateFunctionButton(cfg)
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
     cfg.State = false
-    
     if cfg.Type == "Toggle" then
         local Ind = Instance.new("Frame", Btn)
         Ind.Size = UDim2.new(0, 10, 0, 10)
         Ind.Position = UDim2.new(1, -20, 0.5, -5)
         Ind.BackgroundColor3 = Colors.Bg
         Instance.new("UICorner", Ind).CornerRadius = UDim.new(1, 0)
-        
         cfg.UpdateVisuals = function(s)
             if s then
                 TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Colors.Text}):Play()
@@ -304,7 +288,6 @@ local function CreateFunctionButton(cfg)
     Btn.MouseButton1Click:Connect(function()
         ClearRightPanel()
         RightTitle.Text = cfg.Name
-        
         local BindBtn = Instance.new("TextButton", RightScroll)
         BindBtn.Size = UDim2.new(1, -10, 0, 35)
         BindBtn.BackgroundColor3 = Colors.Bg
@@ -314,29 +297,21 @@ local function CreateFunctionButton(cfg)
         BindBtn.Text = cfg.BoundKey and ("[" .. cfg.BoundKey.Name .. "]") or "[ Назначить клавишу ]"
         BindBtn.BorderSizePixel = 0
         Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 6)
-        
         BindBtn.MouseButton1Click:Connect(function()
             BindBtn.Text = "[ Нажми клавишу... ]"
             BindBtn.TextColor3 = Colors.Accent
             CurrentBindConfig = cfg
             IsBinding = true
         end)
-
         if cfg.Settings then
-            for _, s in pairs(cfg.Settings) do
-                CreateRightSlider(s[1], s[2], s[3], s[4], s[5])
-            end
+            for _, s in pairs(cfg.Settings) do CreateRightSlider(s[1], s[2], s[3], s[4], s[5]) end
         end
-        
         if cfg.Type == "Toggle" then
             cfg.State = not cfg.State
             cfg.UpdateVisuals(cfg.State)
             cfg.Callback(cfg.State)
-        else
-            cfg.Callback()
-        end
+        else cfg.Callback() end
     end)
-    
     table.insert(Pages[cfg.Tab], Btn)
 end
 
@@ -352,7 +327,6 @@ for i, tabName in ipairs(TabsData) do
     tBtn.Text = tabName
     tBtn.BorderSizePixel = 0
     Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 6)
-    
     tBtn.MouseButton1Click:Connect(function()
         for _, other in pairs(LeftPanel:GetChildren()) do
             if other:IsA("TextButton") then
@@ -360,27 +334,18 @@ for i, tabName in ipairs(TabsData) do
             end
         end
         TweenService:Create(tBtn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent, TextColor3 = Colors.Text}):Play()
-        
         for name, buttons in pairs(Pages) do
-            for _, btn in pairs(buttons) do
-                btn.Visible = (name == tabName)
-            end
+            for _, btn in pairs(buttons) do btn.Visible = (name == tabName) end
         end
         ClearRightPanel()
         RightTitle.Text = "Настройки"
     end)
-    
     if i == 1 then tBtn.BackgroundColor3 = Colors.Accent; tBtn.TextColor3 = Colors.Text end
 end
 
-for _, cfg in pairs(FunctionConfig) do
-    CreateFunctionButton(cfg)
-end
-
+for _, cfg in pairs(FunctionConfig) do CreateFunctionButton(cfg) end
 for name, buttons in pairs(Pages) do
-    for _, btn in pairs(buttons) do
-        if name ~= "Main" then btn.Visible = false end
-    end
+    for _, btn in pairs(buttons) do if name ~= "Main" then btn.Visible = false end end
 end
 
 UserInputService.InputBegan:Connect(function(input, gp)
@@ -405,9 +370,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
                     cfg.State = not cfg.State
                     if cfg.UpdateVisuals then cfg.UpdateVisuals(cfg.State) end
                     cfg.Callback(cfg.State)
-                else
-                    cfg.Callback()
-                end
+                else cfg.Callback() end
             end
         end
     end
@@ -417,9 +380,7 @@ end)
 function SaveConfig()
     if writefile then
         local data = {}
-        for _, cfg in pairs(FunctionConfig) do
-            data[cfg.Name] = cfg.BoundKey and cfg.BoundKey.Name or nil
-        end
+        for _, cfg in pairs(FunctionConfig) do data[cfg.Name] = cfg.BoundKey and cfg.BoundKey.Name or nil end
         pcall(function() writefile("VyarH_Config.json", HttpService:JSONEncode(data)) end)
         print("VyarH: Конфиг сохранен!")
     end
@@ -430,59 +391,52 @@ function LoadConfig()
         local success, data = pcall(function() return HttpService:JSONDecode(readfile("VyarH_Config.json")) end)
         if success and data then
             for _, cfg in pairs(FunctionConfig) do
-                if data[cfg.Name] then
-                    cfg.BoundKey = Enum.KeyCode[data[cfg.Name]]
-                end
+                if data[cfg.Name] then cfg.BoundKey = Enum.KeyCode[data[cfg.Name]] end
             end
             print("VyarH: Конфиг загружен!")
         end
     end
 end
 
--- ==================== 3008 LOGIC ====================
--- Бесконечная еда и стамина
-RunService.Heartbeat:Connect(function()
-    if infHunger or infEnergy then
-        local char = LocalPlayer.Character
-        if char then
-            for _, obj in pairs(char:GetDescendants()) do
-                if infHunger and (obj.Name:lower():find("hunger") or obj.Name:lower():find("food")) and obj:IsA("NumberValue") then
-                    obj.Value = 100
-                end
-                if infEnergy and (obj.Name:lower():find("energy") or obj.Name:lower():find("stamina")) and obj:IsA("NumberValue") then
-                    obj.Value = 100
+-- ==================== 3008 LOGIC (ОПТИМИЗИРОВАНО) ====================
+-- Цикл обновления для 3008 (раз в 2 секунды, чтобы не лагало)
+task.spawn(function()
+    while task.wait(2) do
+        if infHunger or infEnergy then
+            local char = LocalPlayer.Character
+            if char then
+                for _, obj in pairs(char:GetDescendants()) do
+                    if infHunger and (obj.Name:lower():find("hunger") or obj.Name:lower():find("food")) and obj:IsA("NumberValue") then obj.Value = 100 end
+                    if infEnergy and (obj.Name:lower():find("energy") or obj.Name:lower():find("stamina")) and obj:IsA("NumberValue") then obj.Value = 100 end
                 end
             end
         end
-    end
-end)
 
--- Employee ESP
-RunService.Heartbeat:Connect(function()
-    if empEsp then
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= LocalPlayer.Character then
-                if not Players:GetPlayerFromCharacter(v) then
-                    if not v:FindFirstChild("VyarHEmp") then
-                        local h = Instance.new("Highlight", v)
-                        h.Name = "VyarHEmp"
-                        h.FillColor = Color3.fromRGB(255, 0, 0)
-                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
+        if empEsp then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= LocalPlayer.Character then
+                    if not Players:GetPlayerFromCharacter(v) then
+                        if not v:FindFirstChild("VyarHEmp") then
+                            local h = Instance.new("Highlight", v)
+                            h.Name = "VyarHEmp"
+                            h.FillColor = Color3.fromRGB(255, 0, 0)
+                            h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        end
                     end
                 end
             end
-        end
-    else
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model") then
-                local h = v:FindFirstChild("VyarHEmp")
-                if h then h:Destroy() end
+        else
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Model") then
+                    local h = v:FindFirstChild("VyarHEmp")
+                    if h then h:Destroy() end
+                end
             end
         end
     end
 end)
 
--- Auto Loot (Click)
+-- Auto Loot (ТП по клику на еду)
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp or not autoLoot or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
     local mouse = LocalPlayer:GetMouse()
@@ -516,11 +470,9 @@ RunService.Heartbeat:Connect(function()
             )
         end
     end
-    
     if noclipEnabled and LocalPlayer.Character then
         for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
     end
-
     if godEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
         LocalPlayer.Character.Humanoid.Health = 100 
     end
@@ -545,7 +497,6 @@ RunService.RenderStepped:Connect(function()
         flyBV.Velocity = moveDir * currentFlySpeed
         flyBG.CFrame = cam.CFrame
     end
-
     if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local closest, dist = nil, aimbotFOV
         local myChar = LocalPlayer.Character
@@ -574,7 +525,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Переключатель меню (RightShift)
 local isMenuOpen = true
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
@@ -598,4 +548,4 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; ToggleBtn.Visible = false; isMenuOpen = true end)
 
-print("VyarH v1.2.0 (3008 Edition) успешно загружено!")
+print("VyarH v1.2.1 (Optimized for 3008) успешно загружено!")
