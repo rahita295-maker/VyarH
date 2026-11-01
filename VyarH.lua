@@ -1,5 +1,5 @@
 -- ============================================================
--- VYARH v1.0.0 (OFFICIAL RELEASE)
+-- VYARH v1.2.0 (3008 SURVIVAL EDITION)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -15,7 +15,7 @@ for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
 
--- Палитра цветов
+-- Палитра
 local Colors = {
     Bg = Color3.fromRGB(15, 15, 15),
     Panel = Color3.fromRGB(22, 22, 22),
@@ -32,12 +32,10 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 ScreenGui.IgnoreGuiInset = true
 
--- Glassmorphism Blur
 local Blur = Instance.new("BlurEffect", Lighting)
 Blur.Size = 0
 Blur.Enabled = false
 
--- Круг FOV для аимбота
 local FOVCircle = Instance.new("Frame", ScreenGui)
 FOVCircle.Size = UDim2.new(0, 300, 0, 300)
 FOVCircle.Position = UDim2.new(0.5, -150, 0.5, -150)
@@ -47,7 +45,6 @@ FOVCircle.BorderColor3 = Colors.Accent
 FOVCircle.Visible = false
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 
--- Главное окно
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 680, 0, 520)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -60,7 +57,6 @@ MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = Colors.Accent; UIStroke.Thickness = 1.5; UIStroke.Transparency = 0.3
 
--- Верхняя панель
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 55)
 TopBar.BackgroundColor3 = Colors.Panel
@@ -69,18 +65,18 @@ TopBar.BorderSizePixel = 0
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", TopBar)
-Title.Size = UDim2.new(0, 130, 1, 0)
+Title.Size = UDim2.new(0, 150, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.Text = "VyarH v1.0.0"
+Title.Text = "VyarH v1.2.0"
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local DescLabel = Instance.new("TextLabel", TopBar)
-DescLabel.Size = UDim2.new(1, -250, 1, 0)
-DescLabel.Position = UDim2.new(0, 150, 0, 0)
+DescLabel.Size = UDim2.new(1, -280, 1, 0)
+DescLabel.Position = UDim2.new(0, 170, 0, 0)
 DescLabel.BackgroundTransparency = 1
 DescLabel.TextColor3 = Colors.TextDim
 DescLabel.Font = Enum.Font.GothamMedium
@@ -100,7 +96,6 @@ CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy(); Blur:Destroy() end)
 
--- Левая панель (Вкладки)
 local LeftPanel = Instance.new("Frame", MainFrame)
 LeftPanel.Size = UDim2.new(0, 120, 1, -65)
 LeftPanel.Position = UDim2.new(0, 10, 0, 60)
@@ -113,7 +108,6 @@ local TabList = Instance.new("UIListLayout", LeftPanel)
 TabList.Padding = UDim.new(0, 5)
 TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Центральная панель (Функции)
 local CenterPanel = Instance.new("Frame", MainFrame)
 CenterPanel.Size = UDim2.new(0, 280, 1, -65)
 CenterPanel.Position = UDim2.new(0, 140, 0, 60)
@@ -134,7 +128,6 @@ local FuncLayout = Instance.new("UIListLayout", FuncScroll)
 FuncLayout.Padding = UDim.new(0, 6)
 FuncLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Правая панель (Настройки)
 local RightPanel = Instance.new("Frame", MainFrame)
 RightPanel.Size = UDim2.new(0, 220, 1, -65)
 RightPanel.Position = UDim2.new(1, -230, 0, 60)
@@ -164,8 +157,7 @@ local RightLayout = Instance.new("UIListLayout", RightScroll)
 RightLayout.Padding = UDim.new(0, 8)
 RightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- ПЕРЕМЕННЫЕ СОСТОЯНИЙ
-local Pages = {Main = {}, Combat = {}, Visuals = {}, Optimize = {}, Settings = {}}
+local Pages = {Main = {}, Combat = {}, Visuals = {}, Optimize = {}, Game3008 = {}, Settings = {}}
 local IsBinding = false
 local CurrentBindConfig = nil
 
@@ -181,7 +173,9 @@ local esp3DGuis = {}
 local lastSafePosition = nil
 local myTrail = nil
 
--- UI ЛОГИКА
+-- 3008 Variables
+local infHunger, infEnergy, empEsp, autoLoot = false, false, false, false
+
 local function ClearRightPanel()
     for _, v in pairs(RightScroll:GetChildren()) do
         if v:IsA("Frame") or v:IsA("TextButton") then v:Destroy() end
@@ -224,21 +218,13 @@ local function CreateRightSlider(name, min, max, default, callback)
     UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update(i) end end)
 end
 
--- КОНФИГУРАЦИЯ
 local FunctionConfig = {
     -- MAIN
     {Name="Stealth Bypass", Tab="Main", Desc="Маскировка от античитов", Type="Toggle", Callback=function(s) stealthEnabled=s end},
     {Name="Click TP", Tab="Main", Desc="Телепорт по клику мыши", Type="Toggle", Callback=function(s) clickTpEnabled=s end},
     {Name="Speed Hack", Tab="Main", Desc="Обход скорости", Type="Toggle", Callback=function(s) speedEnabled=s end, Settings={{"Speed", 16, 200, 32, function(v) baseSpeed=v end}}},
     {Name="Spider", Tab="Main", Desc="Лазать по стенам", Type="Toggle", Callback=function(s) spiderEnabled=s end},
-    {Name="Fly (WASD)", Tab="Main", Desc="Полет", Type="Toggle", 
-     Callback=function(s) 
-        flyEnabled=s 
-        if s and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            flyBV = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart); flyBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            flyBG = Instance.new("BodyGyro", LocalPlayer.Character.HumanoidRootPart); flyBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5); flyBG.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-        else if flyBV then flyBV:Destroy() end; if flyBG then flyBG:Destroy() end end
-     end, Settings={{"Speed", 10, 200, 50, function(v) currentFlySpeed=v end}}},
+    {Name="Fly (WASD)", Tab="Main", Desc="Полет", Type="Toggle", Callback=function(s) flyEnabled=s end, Settings={{"Speed", 10, 200, 50, function(v) currentFlySpeed=v end}}},
     {Name="Noclip", Tab="Main", Desc="Проход сквозь стены", Type="Toggle", Callback=function(s) noclipEnabled=s end},
     {Name="Infinite Jump", Tab="Main", Desc="Бесконечный прыжок", Type="Toggle", Callback=function(s) infJumpEnabled=s end},
     
@@ -250,54 +236,30 @@ local FunctionConfig = {
     
     -- VISUALS
     {Name="Glassmorphism UI", Tab="Visuals", Desc="Размытие фона за меню", Type="Toggle", Callback=function(s) glassEnabled=s; Blur.Enabled=s; Blur.Size = s and 15 or 0 end},
-    {Name="Particle Trails", Tab="Visuals", Desc="Шлейф за спиной", Type="Toggle", 
-     Callback=function(s) 
-        trailEnabled=s 
-        if s and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local att0 = Instance.new("Attachment", LocalPlayer.Character.HumanoidRootPart); att0.Position = Vector3.new(0, 1, 0)
-            local att1 = Instance.new("Attachment", LocalPlayer.Character.HumanoidRootPart); att1.Position = Vector3.new(0, -1, 0)
-            myTrail = Instance.new("Trail", LocalPlayer.Character.HumanoidRootPart)
-            myTrail.Attachment0 = att0; myTrail.Attachment1 = att1
-            myTrail.LightEmission = 1; myTrail.Color = ColorSequence.new(Colors.Accent); myTrail.Lifetime = 0.5
-        else if myTrail then myTrail:Destroy() end end
-     end},
+    {Name="Particle Trails", Tab="Visuals", Desc="Шлейф за спиной", Type="Toggle", Callback=function(s) trailEnabled=s end},
     {Name="3D ESP", Tab="Visuals", Desc="Коробки и HP над игроками", Type="Toggle", Callback=function(s) esp3DEnabled=s end},
     {Name="Time Changer (Noon)", Tab="Visuals", Desc="Ставит день (14:00)", Type="Toggle", Callback=function(s) Lighting.ClockTime = s and 14 or 0 end},
     
     -- OPTIMIZE
-    {Name="Aggressive FPS Boost", Tab="Optimize", Desc="Удаляет все частицы (Огонь, Дым)", Type="Button", Callback=function() 
+    {Name="Aggressive FPS Boost", Tab="Optimize", Desc="Удаляет все частицы", Type="Button", Callback=function() 
         for _,v in pairs(workspace:GetDescendants()) do if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then v:Destroy() end end 
     end},
-    {Name="Hide Accessories", Tab="Optimize", Desc="Скрывает шапки и волосы у всех", Type="Button", Callback=function() 
-        for _,p in pairs(Players:GetPlayers()) do
-            if p.Character then
-                for _,v in pairs(p.Character:GetChildren()) do
-                    if v:IsA("Accessory") then v:Destroy() end
-                end
-            end
-        end
-    end},
-    {Name="Disable Post-Processing", Tab="Optimize", Desc="Убирает свечение и размытие игры", Type="Button", Callback=function() 
-        for _,v in pairs(Lighting:GetChildren()) do if v:IsA("PostEffect") and v ~= Blur then v:Destroy() end end 
-    end},
-    {Name="Low Graphics", Tab="Optimize", Desc="Режим картошки (Ставит графу на 1)", Type="Button", Callback=function() 
+    {Name="Low Graphics", Tab="Optimize", Desc="Режим картошки", Type="Button", Callback=function() 
         settings().Rendering.QualityLevel = 1 
     end},
-    {Name="Clear Terrain", Tab="Optimize", Desc="Убирает траву и детали ландшафта", Type="Button", Callback=function() 
-        local terrain = workspace:FindFirstChildOfClass("Terrain")
-        if terrain then
-            terrain.WaterWaveSize = 0; terrain.WaterTransparency = 1
-            terrain.Decoration = false
-        end
-    end},
     
-    -- SETTINGS (Убрана смена цвета)
-    {Name="Save Config", Tab="Settings", Desc="Сохраняет бинды в файл", Type="Button", Callback=function() SaveConfig() end},
+    -- ===== 3008 TAB =====
+    {Name="Infinite Hunger", Tab="Game3008", Desc="Еда не убывает", Type="Toggle", Callback=function(s) infHunger=s end},
+    {Name="Infinite Energy", Tab="Game3008", Desc="Выносливость не убывает", Type="Toggle", Callback=function(s) infEnergy=s end},
+    {Name="Employee ESP", Tab="Game3008", Desc="Подсветка сотрудников (NPC)", Type="Toggle", Callback=function(s) empEsp=s end},
+    {Name="Auto Loot (Клик)", Tab="Game3008", Desc="Кликни по предмету, чтобы телепортироваться к нему", Type="Toggle", Callback=function(s) autoLoot=s end},
+    
+    -- SETTINGS
+    {Name="Save Config", Tab="Settings", Desc="Сохраняет бинды", Type="Button", Callback=function() SaveConfig() end},
     {Name="Load Config", Tab="Settings", Desc="Загружает бинды", Type="Button", Callback=function() LoadConfig() end},
-    {Name="Destroy GUI", Tab="Settings", Desc="Полностью закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy(); Blur:Destroy() end}
+    {Name="Destroy GUI", Tab="Settings", Desc="Закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy(); Blur:Destroy() end}
 }
 
--- СОЗДАНИЕ ИНТЕРФЕЙСА
 local function CreateFunctionButton(cfg)
     local Btn = Instance.new("TextButton", FuncScroll)
     Btn.Size = UDim2.new(1, -10, 0, 40)
@@ -378,7 +340,7 @@ local function CreateFunctionButton(cfg)
     table.insert(Pages[cfg.Tab], Btn)
 end
 
-local TabsData = {"Main", "Combat", "Visuals", "Optimize", "Settings"}
+local TabsData = {"Main", "Combat", "Visuals", "Optimize", "Game3008", "Settings"}
 for i, tabName in ipairs(TabsData) do
     local tBtn = Instance.new("TextButton", LeftPanel)
     tBtn.Size = UDim2.new(1, -15, 0, 35)
@@ -451,41 +413,91 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ФУНКЦИИ КОНФИГА
+-- Config
 function SaveConfig()
     if writefile then
         local data = {}
         for _, cfg in pairs(FunctionConfig) do
             data[cfg.Name] = cfg.BoundKey and cfg.BoundKey.Name or nil
         end
-        local success, err = pcall(function()
-            writefile("VyarH_Config.json", HttpService:JSONEncode(data))
-        end)
-        if success then print("VyarH: Конфиг сохранен!") else print("VyarH: Ошибка сохранения: " .. tostring(err)) end
-    else
-        print("VyarH: Твой инжектор не поддерживает сохранение файлов.")
+        pcall(function() writefile("VyarH_Config.json", HttpService:JSONEncode(data)) end)
+        print("VyarH: Конфиг сохранен!")
     end
 end
 
 function LoadConfig()
-    if isfile and readfile then
-        if isfile("VyarH_Config.json") then
-            local success, data = pcall(function() return HttpService:JSONDecode(readfile("VyarH_Config.json")) end)
-            if success and data then
-                for _, cfg in pairs(FunctionConfig) do
-                    if data[cfg.Name] then
-                        cfg.BoundKey = Enum.KeyCode[data[cfg.Name]]
-                    end
+    if isfile and readfile and isfile("VyarH_Config.json") then
+        local success, data = pcall(function() return HttpService:JSONDecode(readfile("VyarH_Config.json")) end)
+        if success and data then
+            for _, cfg in pairs(FunctionConfig) do
+                if data[cfg.Name] then
+                    cfg.BoundKey = Enum.KeyCode[data[cfg.Name]]
                 end
-                print("VyarH: Конфиг загружен!")
             end
-        else
-            print("VyarH: Файл конфига не найден.")
+            print("VyarH: Конфиг загружен!")
         end
     end
 end
 
--- ГЛАВНАЯ ЛОГИКА
+-- ==================== 3008 LOGIC ====================
+-- Бесконечная еда и стамина
+RunService.Heartbeat:Connect(function()
+    if infHunger or infEnergy then
+        local char = LocalPlayer.Character
+        if char then
+            for _, obj in pairs(char:GetDescendants()) do
+                if infHunger and (obj.Name:lower():find("hunger") or obj.Name:lower():find("food")) and obj:IsA("NumberValue") then
+                    obj.Value = 100
+                end
+                if infEnergy and (obj.Name:lower():find("energy") or obj.Name:lower():find("stamina")) and obj:IsA("NumberValue") then
+                    obj.Value = 100
+                end
+            end
+        end
+    end
+end)
+
+-- Employee ESP
+RunService.Heartbeat:Connect(function()
+    if empEsp then
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= LocalPlayer.Character then
+                if not Players:GetPlayerFromCharacter(v) then
+                    if not v:FindFirstChild("VyarHEmp") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "VyarHEmp"
+                        h.FillColor = Color3.fromRGB(255, 0, 0)
+                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    end
+                end
+            end
+        end
+    else
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") then
+                local h = v:FindFirstChild("VyarHEmp")
+                if h then h:Destroy() end
+            end
+        end
+    end
+end)
+
+-- Auto Loot (Click)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp or not autoLoot or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    local mouse = LocalPlayer:GetMouse()
+    if mouse.Target then
+        local targetModel = mouse.Target:FindFirstAncestorOfClass("Model")
+        if targetModel and (targetModel.Name:lower():find("food") or targetModel.Name:lower():find("apple") or targetModel.Name:lower():find("medkit")) then
+            local hrp = targetModel:FindFirstChild("HumanoidRootPart") or targetModel:FindFirstChild("Handle") or targetModel:FindFirstChildWhichIsA("BasePart")
+            if hrp and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, 3, 0)
+            end
+        end
+    end
+end)
+
+-- ==================== ОБЩАЯ ЛОГИКА ====================
 RunService.Heartbeat:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = LocalPlayer.Character.HumanoidRootPart
@@ -505,93 +517,18 @@ RunService.Heartbeat:Connect(function()
         end
     end
     
-    if noclipEnabled and stealthEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if LocalPlayer.Character.HumanoidRootPart.Position.Y < -40 and lastSafePosition then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = lastSafePosition
-        end
-    end
-
-    if spiderEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        local char = LocalPlayer.Character
-        local hrp = char.HumanoidRootPart
-        local hum = char.Humanoid
-        if hum.MoveDirection.Magnitude > 0 then
-            local ray = Ray.new(hrp.Position, hrp.CFrame.LookVector * 3)
-            local part = workspace:FindPartOnRay(ray, char)
-            if part and hrp.CFrame.LookVector:Dot(hum.MoveDirection) > 0.1 then
-                hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 50, hrp.AssemblyLinearVelocity.Z)
-            end
-        end
-    end
-    
-    if spinbotEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(90), 0)
+    if noclipEnabled and LocalPlayer.Character then
+        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
     end
 
     if godEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then 
         LocalPlayer.Character.Humanoid.Health = 100 
-    end
-
-    if hitboxEnabled then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then 
-                p.Character.HumanoidRootPart.Size = Vector3.new(10, 10, 10) 
-            end
-        end
-    end
-
-    -- 3D ESP
-    if esp3DEnabled then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-                if not esp3DGuis[p] then
-                    local bg = Instance.new("BillboardGui", p.Character.Head)
-                    bg.Name = "VyarH3D"
-                    bg.Size = UDim2.new(0, 100, 0, 50)
-                    bg.StudsOffset = Vector3.new(0, 2.5, 0)
-                    bg.AlwaysOnTop = true
-                    
-                    local name = Instance.new("TextLabel", bg)
-                    name.Size = UDim2.new(1, 0, 0.5, 0)
-                    name.BackgroundTransparency = 1
-                    name.TextColor3 = Colors.Accent
-                    name.TextStrokeTransparency = 0
-                    name.Font = Enum.Font.GothamBold
-                    name.TextSize = 14
-                    name.Text = p.Name
-                    
-                    local health = Instance.new("Frame", bg)
-                    health.Size = UDim2.new(1, 0, 0.15, 0)
-                    health.Position = UDim2.new(0, 0, 0.6, 0)
-                    health.BackgroundColor3 = Color3.new(0, 255, 0)
-                    health.BorderSizePixel = 1
-                    health.BorderColor3 = Color3.new(0, 0, 0)
-                    
-                    esp3DGuis[p] = bg
-                end
-                local healthBar = esp3DGuis[p]:FindFirstChild("Frame")
-                if healthBar and p.Character:FindFirstChild("Humanoid") then
-                    healthBar.Size = UDim2.new(p.Character.Humanoid.Health / p.Character.Humanoid.MaxHealth, 0, 0.15, 0)
-                end
-            end
-        end
-    else
-        for p, gui in pairs(esp3DGuis) do
-            gui:Destroy()
-            esp3DGuis[p] = nil
-        end
     end
 end)
 
 UserInputService.JumpRequest:Connect(function()
     if infJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
-RunService.Stepped:Connect(function()
-    if noclipEnabled and LocalPlayer.Character then
-        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
     end
 end)
 
@@ -608,10 +545,6 @@ RunService.RenderStepped:Connect(function()
         flyBV.Velocity = moveDir * currentFlySpeed
         flyBG.CFrame = cam.CFrame
     end
-    
-    if fovEnabled and workspace.CurrentCamera.FieldOfView ~= currentCamFov then
-        workspace.CurrentCamera.FieldOfView = currentCamFov
-    end
 
     if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local closest, dist = nil, aimbotFOV
@@ -625,18 +558,12 @@ RunService.RenderStepped:Connect(function()
             end
             if closest then 
                 local targetCFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, closest.Position)
-                local smoothFactor = stealthEnabled and math.max(0.1, aimbotSmoothness) or aimbotSmoothness
-                if stealthEnabled then
-                    targetCFrame = targetCFrame * CFrame.Angles(math.rad(math.random(-2,2)/10), math.rad(math.random(-2,2)/10), 0)
-                end
-                workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame:Lerp(targetCFrame, smoothFactor) 
+                workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame:Lerp(targetCFrame, aimbotSmoothness) 
             end
         end
     end
 end)
 
-local tracerFolder = Instance.new("Folder", workspace)
-tracerFolder.Name = "VyarHTracers"
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if clickTpEnabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -645,23 +572,9 @@ UserInputService.InputBegan:Connect(function(input, gp)
             LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
         end
     end
-    
-    if tracersEnabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mouse = LocalPlayer:GetMouse()
-        if mouse.Target and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local startPos = LocalPlayer.Character.HumanoidRootPart.Position
-            local endPos = mouse.Hit.Position
-            local tracer = Instance.new("Part", tracerFolder)
-            tracer.Anchored = true; tracer.CanCollide = false; tracer.Material = Enum.Material.Neon; tracer.Color = Colors.Accent
-            tracer.Size = Vector3.new(0.1, 0.1, (startPos - endPos).Magnitude)
-            tracer.CFrame = CFrame.lookAt(startPos, endPos) * CFrame.new(0, 0, -(startPos - endPos).Magnitude/2)
-            TweenService:Create(tracer, TweenInfo.new(0.5), {Transparency = 1}):Play()
-            task.delay(0.5, function() tracer:Destroy() end)
-        end
-    end
 end)
 
--- Скрытие меню
+-- Переключатель меню (RightShift)
 local isMenuOpen = true
 local ToggleBtn = Instance.new("TextButton", ScreenGui)
 ToggleBtn.Size = UDim2.new(0, 100, 0, 35)
@@ -685,4 +598,4 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; ToggleBtn.Visible = false; isMenuOpen = true end)
 
-print("VyarH v1.0.0 Release успешно загружено!")
+print("VyarH v1.2.0 (3008 Edition) успешно загружено!")
