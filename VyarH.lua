@@ -1,10 +1,11 @@
 -- ============================================================
--- VYARH v1.3.0 (CLEAN EDITION - NO 3008, NO LAG)
+-- VYARH v2.0.0 (NEON BLUE EDITION)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Очистка старых версий
@@ -12,13 +13,14 @@ for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
 
+-- Палитра (Неоновый синий)
 local Colors = {
-    Bg = Color3.fromRGB(15, 15, 15),
-    Panel = Color3.fromRGB(22, 22, 22),
-    Element = Color3.fromRGB(32, 32, 32),
-    Accent = Color3.fromRGB(255, 115, 0),
+    Bg = Color3.fromRGB(12, 12, 14),
+    Panel = Color3.fromRGB(20, 20, 25),
+    Element = Color3.fromRGB(30, 30, 38),
+    Accent = Color3.fromRGB(0, 170, 255), -- Неоновый синий
     Text = Color3.fromRGB(255, 255, 255),
-    TextDim = Color3.fromRGB(160, 160, 160)
+    TextDim = Color3.fromRGB(140, 140, 150)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -27,34 +29,56 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 ScreenGui.IgnoreGuiInset = true
 
--- Главное окно (без лишних обводок)
+-- Круг FOV
+local FOVCircle = Instance.new("Frame", ScreenGui)
+FOVCircle.Size = UDim2.new(0, 300, 0, 300)
+FOVCircle.Position = UDim2.new(0.5, -150, 0.5, -150)
+FOVCircle.BackgroundTransparency = 1
+FOVCircle.BorderSizePixel = 1
+FOVCircle.BorderColor3 = Colors.Accent
+FOVCircle.Visible = false
+Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
+
+-- Главное окно
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 450, 0, 500)
+MainFrame.Size = UDim2.new(0, 500, 0, 450)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Colors.Bg
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
-local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 50)
-TopBar.BackgroundColor3 = Colors.Panel
-TopBar.BorderSizePixel = 0
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
+-- Неоновая обводка
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Colors.Accent
+UIStroke.Thickness = 1
+UIStroke.Transparency = 0.3
 
-local Title = Instance.new("TextLabel", TopBar)
+-- Заголовок
+local Header = Instance.new("Frame", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Colors.Panel
+Header.BorderSizePixel = 0
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+local HeaderFix = Instance.new("Frame", Header)
+HeaderFix.Size = UDim2.new(1, 0, 0, 20)
+HeaderFix.Position = UDim2.new(0, 0, 1, -20)
+HeaderFix.BackgroundColor3 = Colors.Panel
+HeaderFix.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 18
-Title.Text = "VyarH v1.3.0"
+Title.Text = "VyarH | v2.0.0"
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local CloseBtn = Instance.new("TextButton", TopBar)
+local CloseBtn = Instance.new("TextButton", Header)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -40, 0, 10)
 CloseBtn.BackgroundColor3 = Colors.Element
@@ -66,11 +90,28 @@ CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
-local Scroll = Instance.new("ScrollingFrame", MainFrame)
-Scroll.Size = UDim2.new(1, -20, 1, -60)
-Scroll.Position = UDim2.new(0, 10, 0, 55)
+-- Контейнер вкладок (слева)
+local TabPanel = Instance.new("Frame", MainFrame)
+TabPanel.Size = UDim2.new(0, 110, 1, -60)
+TabPanel.Position = UDim2.new(0, 10, 0, 55)
+TabPanel.BackgroundColor3 = Colors.Panel
+TabPanel.BorderSizePixel = 0
+Instance.new("UICorner", TabPanel).CornerRadius = UDim.new(0, 8)
+
+local TabList = Instance.new("UIListLayout", TabPanel)
+TabList.Padding = UDim.new(0, 5)
+TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Контейнер контента (справа)
+local ContentPanel = Instance.new("Frame", MainFrame)
+ContentPanel.Size = UDim2.new(1, -130, 1, -60)
+ContentPanel.Position = UDim2.new(0, 120, 0, 55)
+ContentPanel.BackgroundTransparency = 1
+
+local Scroll = Instance.new("ScrollingFrame", ContentPanel)
+Scroll.Size = UDim2.new(1, 0, 1, 0)
 Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 6
+Scroll.ScrollBarThickness = 4
 Scroll.ScrollBarImageColor3 = Colors.Accent
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
@@ -79,39 +120,95 @@ Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- Переменные
+local Pages = {Main = {}, Combat = {}, Visuals = {}}
 local speedOn, flyOn, noclipOn, infJumpOn, tpOn = false, false, false, false, false
 local aimbotOn, godOn, espOn, spinOn = false, false, false, false
-local spd, flySpd = 32, 50
+local spd, flySpd, aimSmooth, aimFOV = 32, 50, 0.3, 300
 local flyV, flyG
 local HLs = {}
 
--- Кнопки-переключатели
-local function CreateToggle(text, callback)
+-- Создание вкладок
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton", TabPanel)
+    Btn.Size = UDim2.new(1, -10, 0, 35)
+    Btn.BackgroundColor3 = Colors.Element
+    Btn.TextColor3 = Colors.TextDim
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 13
+    Btn.Text = name
+    Btn.BorderSizePixel = 0
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    
+    Btn.MouseButton1Click:Connect(function()
+        for _, b in pairs(TabPanel:GetChildren()) do
+            if b:IsA("TextButton") then
+                TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Element, TextColor3 = Colors.TextDim}):Play()
+            end
+        end
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent, TextColor3 = Colors.Bg}):Play()
+        
+        for n, buttons in pairs(Pages) do
+            for _, btn in pairs(buttons) do
+                btn.Visible = (n == name)
+            end
+        end
+    end)
+    
+    if name == "Main" then
+        Btn.BackgroundColor3 = Colors.Accent
+        Btn.TextColor3 = Colors.Bg
+    end
+    return name
+end
+
+-- Toggle (Переключатель)
+local function CreateToggle(name, text, callback)
     local Btn = Instance.new("TextButton", Scroll)
-    Btn.Size = UDim2.new(1, -10, 0, 40)
+    Btn.Size = UDim2.new(1, -10, 0, 45)
     Btn.BackgroundColor3 = Colors.Element
     Btn.TextColor3 = Colors.TextDim
     Btn.Font = Enum.Font.GothamMedium
-    Btn.TextSize = 14
-    Btn.Text = text
+    Btn.TextSize = 13
+    Btn.Text = "  " .. text
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
     Btn.BorderSizePixel = 0
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+    local Switch = Instance.new("Frame", Btn)
+    Switch.Size = UDim2.new(0, 40, 0, 20)
+    Switch.Position = UDim2.new(1, -50, 0.5, -10)
+    Switch.BackgroundColor3 = Colors.Bg
+    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+
+    local Dot = Instance.new("Frame", Switch)
+    Dot.Size = UDim2.new(0, 16, 0, 16)
+    Dot.Position = UDim2.new(0, 2, 0.5, -8)
+    Dot.BackgroundColor3 = Colors.TextDim
+    Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
 
     local state = false
     Btn.MouseButton1Click:Connect(function()
         state = not state
-        Btn.TextColor3 = state and Colors.Text or Colors.TextDim
-        Btn.BackgroundColor3 = state and Colors.Accent or Colors.Element
-        if state then Btn.TextColor3 = Colors.Bg end
+        if state then
+            TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Colors.Text}):Play()
+            TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent}):Play()
+            TweenService:Create(Dot, TweenInfo.new(0.2), {Position = UDim2.new(1, -18, 0.5, -8), BackgroundColor3 = Colors.Bg}):Play()
+        else
+            TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Colors.TextDim}):Play()
+            TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Bg}):Play()
+            TweenService:Create(Dot, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = Colors.TextDim}):Play()
+        end
         callback(state)
     end)
+    table.insert(Pages[name], Btn)
 end
 
--- Ползунки
-local function CreateSlider(text, min, max, def, callback)
+-- Slider (Ползунок)
+local function CreateSlider(tab, text, min, max, def, callback)
     local F = Instance.new("Frame", Scroll)
-    F.Size = UDim2.new(1, -10, 0, 50)
+    F.Size = UDim2.new(1, -10, 0, 55)
     F.BackgroundColor3 = Colors.Element
+    F.BorderSizePixel = 0
     Instance.new("UICorner", F).CornerRadius = UDim.new(0, 6)
     
     local L = Instance.new("TextLabel", F)
@@ -119,12 +216,14 @@ local function CreateSlider(text, min, max, def, callback)
     L.Position = UDim2.new(0, 5, 0, 5)
     L.BackgroundTransparency = 1
     L.TextColor3 = Colors.Text
+    L.Font = Enum.Font.GothamMedium
+    L.TextSize = 12
     L.Text = text .. ": " .. def
     L.TextXAlignment = Enum.TextXAlignment.Left
 
     local Bar = Instance.new("Frame", F)
     Bar.Size = UDim2.new(1, -20, 0, 5)
-    Bar.Position = UDim2.new(0, 10, 0, 30)
+    Bar.Position = UDim2.new(0, 10, 0, 35)
     Bar.BackgroundColor3 = Colors.Bg
     Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
 
@@ -145,12 +244,18 @@ local function CreateSlider(text, min, max, def, callback)
             callback(val)
         end
     end)
+    table.insert(Pages[tab], F)
 end
 
 -- ==================== ФУНКЦИИ ====================
-CreateToggle("Speed Hack", function(s) speedOn = s end)
-CreateSlider("Speed Value", 16, 200, 32, function(v) spd = v end)
-CreateToggle("Fly (WASD)", function(s) 
+CreateTab("Main")
+CreateTab("Combat")
+CreateTab("Visuals")
+
+-- Main
+CreateToggle("Main", "Speed Hack", function(s) speedOn = s end)
+CreateSlider("Main", "Speed Value", 16, 200, 32, function(v) spd = v end)
+CreateToggle("Main", "Fly (WASD)", function(s) 
     flyOn = s 
     if s and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         flyV = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart)
@@ -162,14 +267,20 @@ CreateToggle("Fly (WASD)", function(s)
         if flyG then flyG:Destroy() end
     end
 end)
-CreateSlider("Fly Speed", 10, 200, 50, function(v) flySpd = v end)
-CreateToggle("Noclip", function(s) noclipOn = s end)
-CreateToggle("Infinite Jump", function(s) infJumpOn = s end)
-CreateToggle("Click TP", function(s) tpOn = s end)
-CreateToggle("Aimbot (RMB)", function(s) aimbotOn = s end)
-CreateToggle("Spinbot", function(s) spinOn = s end)
-CreateToggle("God Mode", function(s) godOn = s end)
-CreateToggle("Player ESP", function(s) 
+CreateSlider("Main", "Fly Speed", 10, 200, 50, function(v) flySpd = v end)
+CreateToggle("Main", "Noclip", function(s) noclipOn = s end)
+CreateToggle("Main", "Infinite Jump", function(s) infJumpOn = s end)
+CreateToggle("Main", "Click TP", function(s) tpOn = s end)
+
+-- Combat
+CreateToggle("Combat", "Aimbot (RMB)", function(s) aimbotOn = s end)
+CreateSlider("Combat", "Aimbot Smoothness", 1, 100, 30, function(v) aimSmooth = v / 100 end)
+CreateSlider("Combat", "Aimbot FOV", 50, 800, 300, function(v) aimFOV = v; FOVCircle.Size = UDim2.new(0, v, 0, v); FOVCircle.Position = UDim2.new(0.5, -v/2, 0.5, -v/2) end)
+CreateToggle("Combat", "Spinbot", function(s) spinOn = s end)
+CreateToggle("Combat", "God Mode", function(s) godOn = s end)
+
+-- Visuals
+CreateToggle("Visuals", "Player ESP", function(s) 
     espOn = s 
     if s then
         for _, p in pairs(Players:GetPlayers()) do
@@ -234,7 +345,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     if aimbotOn and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local closest, dist = nil, 300
+        local closest, dist = nil, aimFOV
         local myChar = LocalPlayer.Character
         if myChar and myChar:FindFirstChild("HumanoidRootPart") then
             for _, p in pairs(Players:GetPlayers()) do
@@ -244,7 +355,7 @@ RunService.RenderStepped:Connect(function()
                 end
             end
             if closest then 
-                workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame:Lerp(CFrame.new(workspace.CurrentCamera.CFrame.Position, closest.Position), 0.3) 
+                workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame:Lerp(CFrame.new(workspace.CurrentCamera.CFrame.Position, closest.Position), aimSmooth) 
             end
         end
     end
@@ -262,13 +373,16 @@ end)
 
 -- Скрытие меню
 local toggleBtn = Instance.new("TextButton", ScreenGui)
-toggleBtn.Size = UDim2.new(0, 100, 0, 30)
-toggleBtn.Position = UDim2.new(0, 20, 1, -50)
+toggleBtn.Size = UDim2.new(0, 120, 0, 35)
+toggleBtn.Position = UDim2.new(0, 20, 1, -55)
 toggleBtn.BackgroundColor3 = Colors.Panel
 toggleBtn.TextColor3 = Colors.Accent
-toggleBtn.Text = "VYARH"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 14
+toggleBtn.Text = "VYARH | v2.0.0"
+toggleBtn.BorderSizePixel = 0
 toggleBtn.Visible = false
-toggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; toggleBtn.Visible = false end)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 8)
 
 UserInputService.InputBegan:Connect(function(i, gp)
     if gp then return end
@@ -277,5 +391,6 @@ UserInputService.InputBegan:Connect(function(i, gp)
         toggleBtn.Visible = not MainFrame.Visible
     end
 end)
+toggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; toggleBtn.Visible = false end)
 
-print("VyarH v1.3.0 (Clean) загружено!")
+print("VyarH v2.0.0 (Neon Blue) успешно загружено!")
