@@ -1,5 +1,5 @@
 -- ============================================================
--- VYARH v1.2.1 (3008 OPTIMIZED - NO LAG)
+-- VYARH v1.2.2 (FPS FIX - NO LAG)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -10,16 +10,22 @@ local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Очистка старых версий
 for _, gui in pairs(game.CoreGui:GetChildren()) do
     if gui.Name == "VyarHMenu" then gui:Destroy() end
 end
 
+-- Убираем старый BlurEffect, если он остался в памяти от других скриптов
+for _, effect in pairs(Lighting:GetChildren()) do
+    if effect:IsA("BlurEffect") then effect:Destroy() end
+end
+
+-- Палитра
 local Colors = {
     Bg = Color3.fromRGB(15, 15, 15),
     Panel = Color3.fromRGB(22, 22, 22),
     Element = Color3.fromRGB(32, 32, 32),
     Accent = Color3.fromRGB(255, 115, 0),
-    Green = Color3.fromRGB(0, 255, 100),
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = Color3.fromRGB(160, 160, 160)
 }
@@ -29,11 +35,10 @@ ScreenGui.Name = "VyarHMenu"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game.CoreGui
 ScreenGui.IgnoreGuiInset = true
+-- Отключаем тяжелые эффекты рендера для этого GUI
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling 
 
-local Blur = Instance.new("BlurEffect", Lighting)
-Blur.Size = 0
-Blur.Enabled = false
-
+-- FOV
 local FOVCircle = Instance.new("Frame", ScreenGui)
 FOVCircle.Size = UDim2.new(0, 300, 0, 300)
 FOVCircle.Position = UDim2.new(0.5, -150, 0.5, -150)
@@ -43,17 +48,19 @@ FOVCircle.BorderColor3 = Colors.Accent
 FOVCircle.Visible = false
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 
+-- MainFrame
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 680, 0, 520)
 MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Colors.Bg
-MainFrame.BackgroundTransparency = 0.1
+MainFrame.BackgroundTransparency = 0.05
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = Colors.Accent; UIStroke.Thickness = 1.5; UIStroke.Transparency = 0.3
+-- Оставили только одну обводку, чтобы не грузить ФПС
+local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = Colors.Accent; UIStroke.Thickness = 1; UIStroke.Transparency = 0.5
 
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 55)
@@ -69,7 +76,7 @@ Title.BackgroundTransparency = 1
 Title.TextColor3 = Colors.Accent
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.Text = "VyarH v1.2.1"
+Title.Text = "VyarH v1.2.2"
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local DescLabel = Instance.new("TextLabel", TopBar)
@@ -92,7 +99,7 @@ CloseBtn.TextSize = 18
 CloseBtn.Text = "X"
 CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy(); Blur:Destroy() end)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 local LeftPanel = Instance.new("Frame", MainFrame)
 LeftPanel.Size = UDim2.new(0, 120, 1, -65)
@@ -121,6 +128,8 @@ FuncScroll.BackgroundTransparency = 1
 FuncScroll.ScrollBarThickness = 4
 FuncScroll.ScrollBarImageColor3 = Colors.Accent
 FuncScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+-- Оптимизация скролла (чтобы не рендерил лишнее)
+FuncScroll.ClipsDescendants = true
 
 local FuncLayout = Instance.new("UIListLayout", FuncScroll)
 FuncLayout.Padding = UDim.new(0, 6)
@@ -150,6 +159,7 @@ RightScroll.BackgroundTransparency = 1
 RightScroll.ScrollBarThickness = 4
 RightScroll.ScrollBarImageColor3 = Colors.Accent
 RightScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+RightScroll.ClipsDescendants = true
 
 local RightLayout = Instance.new("UIListLayout", RightScroll)
 RightLayout.Padding = UDim.new(0, 8)
@@ -162,7 +172,7 @@ local CurrentBindConfig = nil
 local speedEnabled, flyEnabled, noclipEnabled, infJumpEnabled, clickTpEnabled = false, false, false, false, false
 local aimbotEnabled, godEnabled, espEnabled, esp3DEnabled = false, false, false, false
 local spiderEnabled, spinbotEnabled, hitboxEnabled, tracersEnabled, fovEnabled = false, false, false, false, false
-local stealthEnabled, glassEnabled, trailEnabled = false, false, false
+local stealthEnabled, trailEnabled = false, false
 local currentCamFov = 70
 local baseSpeed, currentFlySpeed, aimbotSmoothness, aimbotFOV = 32, 50, 0.3, 300
 local flyBV, flyBG
@@ -215,6 +225,7 @@ local function CreateRightSlider(name, min, max, default, callback)
     UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update(i) end end)
 end
 
+-- Убрали Glassmorphism из конфига
 local FunctionConfig = {
     {Name="Stealth Bypass", Tab="Main", Desc="Маскировка от античитов", Type="Toggle", Callback=function(s) stealthEnabled=s end},
     {Name="Click TP", Tab="Main", Desc="Телепорт по клику мыши", Type="Toggle", Callback=function(s) clickTpEnabled=s end},
@@ -227,7 +238,6 @@ local FunctionConfig = {
     {Name="Spinbot", Tab="Combat", Desc="Вращение тела", Type="Toggle", Callback=function(s) spinbotEnabled=s end},
     {Name="Hitbox Expander", Tab="Combat", Desc="Большой хитбокс", Type="Toggle", Callback=function(s) hitboxEnabled=s end},
     {Name="God Mode", Tab="Combat", Desc="Локальный бог", Type="Toggle", Callback=function(s) godEnabled=s end},
-    {Name="Glassmorphism UI", Tab="Visuals", Desc="Размытие фона за меню", Type="Toggle", Callback=function(s) glassEnabled=s; Blur.Enabled=s; Blur.Size = s and 15 or 0 end},
     {Name="Particle Trails", Tab="Visuals", Desc="Шлейф за спиной", Type="Toggle", Callback=function(s) trailEnabled=s end},
     {Name="3D ESP", Tab="Visuals", Desc="Коробки и HP над игроками", Type="Toggle", Callback=function(s) esp3DEnabled=s end},
     {Name="Aggressive FPS Boost", Tab="Optimize", Desc="Удаляет все частицы", Type="Button", Callback=function() 
@@ -235,7 +245,6 @@ local FunctionConfig = {
     end},
     {Name="Low Graphics", Tab="Optimize", Desc="Режим картошки", Type="Button", Callback=function() settings().Rendering.QualityLevel = 1 end},
     
-    -- 3008 (ОПТИМИЗИРОВАНО)
     {Name="Infinite Hunger", Tab="Game3008", Desc="Еда не убывает", Type="Toggle", Callback=function(s) infHunger=s end},
     {Name="Infinite Energy", Tab="Game3008", Desc="Выносливость не убывает", Type="Toggle", Callback=function(s) infEnergy=s end},
     {Name="Employee ESP", Tab="Game3008", Desc="Подсветка NPC (без лагов)", Type="Toggle", Callback=function(s) empEsp=s end},
@@ -243,7 +252,7 @@ local FunctionConfig = {
     
     {Name="Save Config", Tab="Settings", Desc="Сохраняет бинды", Type="Button", Callback=function() SaveConfig() end},
     {Name="Load Config", Tab="Settings", Desc="Загружает бинды", Type="Button", Callback=function() LoadConfig() end},
-    {Name="Destroy GUI", Tab="Settings", Desc="Закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy(); Blur:Destroy() end}
+    {Name="Destroy GUI", Tab="Settings", Desc="Закрывает меню", Type="Button", Callback=function() ScreenGui:Destroy() end}
 }
 
 local function CreateFunctionButton(cfg)
@@ -268,21 +277,21 @@ local function CreateFunctionButton(cfg)
         Instance.new("UICorner", Ind).CornerRadius = UDim.new(1, 0)
         cfg.UpdateVisuals = function(s)
             if s then
-                TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Colors.Text}):Play()
-                TweenService:Create(Ind, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent}):Play()
+                Btn.TextColor3 = Colors.Text
+                Ind.BackgroundColor3 = Colors.Accent
             else
-                TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Colors.TextDim}):Play()
-                TweenService:Create(Ind, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Bg}):Play()
+                Btn.TextColor3 = Colors.TextDim
+                Ind.BackgroundColor3 = Colors.Bg
             end
         end
     end
 
     Btn.MouseEnter:Connect(function()
         DescLabel.Text = cfg.Desc or "Нет описания"
-        TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Bg}):Play()
+        Btn.BackgroundColor3 = Colors.Bg
     end)
     Btn.MouseLeave:Connect(function()
-        TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Colors.Element}):Play()
+        Btn.BackgroundColor3 = Colors.Element
     end)
 
     Btn.MouseButton1Click:Connect(function()
@@ -330,10 +339,12 @@ for i, tabName in ipairs(TabsData) do
     tBtn.MouseButton1Click:Connect(function()
         for _, other in pairs(LeftPanel:GetChildren()) do
             if other:IsA("TextButton") then
-                TweenService:Create(other, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Element, TextColor3 = Colors.TextDim}):Play()
+                other.BackgroundColor3 = Colors.Element
+                other.TextColor3 = Colors.TextDim
             end
         end
-        TweenService:Create(tBtn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.Accent, TextColor3 = Colors.Text}):Play()
+        tBtn.BackgroundColor3 = Colors.Accent
+        tBtn.TextColor3 = Colors.Text
         for name, buttons in pairs(Pages) do
             for _, btn in pairs(buttons) do btn.Visible = (name == tabName) end
         end
@@ -376,7 +387,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Config
 function SaveConfig()
     if writefile then
         local data = {}
@@ -398,8 +408,7 @@ function LoadConfig()
     end
 end
 
--- ==================== 3008 LOGIC (ОПТИМИЗИРОВАНО) ====================
--- Цикл обновления для 3008 (раз в 2 секунды, чтобы не лагало)
+-- ==================== 3008 LOGIC ====================
 task.spawn(function()
     while task.wait(2) do
         if infHunger or infEnergy then
@@ -411,17 +420,14 @@ task.spawn(function()
                 end
             end
         end
-
         if empEsp then
             for _, v in pairs(workspace:GetDescendants()) do
                 if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= LocalPlayer.Character then
-                    if not Players:GetPlayerFromCharacter(v) then
-                        if not v:FindFirstChild("VyarHEmp") then
-                            local h = Instance.new("Highlight", v)
-                            h.Name = "VyarHEmp"
-                            h.FillColor = Color3.fromRGB(255, 0, 0)
-                            h.OutlineColor = Color3.fromRGB(255, 255, 255)
-                        end
+                    if not Players:GetPlayerFromCharacter(v) and not v:FindFirstChild("VyarHEmp") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "VyarHEmp"
+                        h.FillColor = Color3.fromRGB(255, 0, 0)
+                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
                     end
                 end
             end
@@ -436,7 +442,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Loot (ТП по клику на еду)
+-- Auto Loot
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp or not autoLoot or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
     local mouse = LocalPlayer:GetMouse()
@@ -548,4 +554,4 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; ToggleBtn.Visible = false; isMenuOpen = true end)
 
-print("VyarH v1.2.1 (Optimized for 3008) успешно загружено!")
+print("VyarH v1.2.2 (FPS Fix) успешно загружено!")
